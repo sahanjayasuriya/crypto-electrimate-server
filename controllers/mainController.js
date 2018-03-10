@@ -1,0 +1,3 @@
+(function (mainController) {
+
+})(module.exports);
