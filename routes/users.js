@@ -1,5 +1,5 @@
 (function (routes) {
-    var userController = require('../controllers/userController');
+    var userController = require('../controllers/user-controller');
     var prefix = '/api/v1/user';
 
     routes.init = function (app) {

@@ -1,8 +1,8 @@
 (function (userController) {
-    var s = require('../config/config');
+    var config = require('../config/config');
 
-    var firebaseAdmin = s.firebaseAdmin;
-    var database = s.database;
+    var firebaseAdmin = config.firebaseAdmin;
+    var database = config.database;
 
     userController.addUser = function (req, res) {
         firebaseAdmin.auth().createUser({

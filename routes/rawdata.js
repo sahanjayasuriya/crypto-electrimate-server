@@ -1,5 +1,5 @@
 (function (routes) {
-    var rawDataController = require('../controllers/rawDataController');
+    var rawDataController = require('../controllers/rawdata-controller');
     var prefix = '/api/v1/raw-data';
 
     routes.init = function (app) {
