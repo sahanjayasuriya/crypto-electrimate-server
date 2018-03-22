@@ -166,7 +166,7 @@
                 res.status(500);
                 res.end();
             })
-    }
+    };
 
     userController.deleteUser = function (req, res) {
         firebaseAdmin.auth().deleteUser(req.query.id)
@@ -180,7 +180,7 @@
                 res.status(500);
                 res.end();
             })
-    }
+    };
 
 
 })(module.exports);
