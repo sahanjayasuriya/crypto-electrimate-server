@@ -2,12 +2,14 @@
     var config = require('../config/config');
 
     var firebaseAdmin = config.firebaseAdmin;
+    var firebaseClient = require('firebase');
     var database = config.database;
 
     userController.addUser = function (req, res) {
         firebaseAdmin.auth().createUser({
             email: req.body.email,
             password: req.body.password,
+            phoneNumber: req.body.phoneNumber,
             displayName: req.body.displayName
         }).then(function (data) {
             firebaseAdmin.auth().createCustomToken(data.uid)
@@ -34,7 +36,9 @@
                 userType: 'HOUSE-OWNER',
                 firstLogin: true
             }).catch(function (err) {
-                console.log(err);
+                res.send(err.message);
+                res.status(500);
+                res.end();
             });
             res.send(data);
             res.status(201);
@@ -171,9 +175,16 @@
     userController.deleteUser = function (req, res) {
         firebaseAdmin.auth().deleteUser(req.query.id)
             .then(function (data) {
-                res.send(data);
-                res.status(200);
-                res.end();
+                database.ref('users/' + req.query.id).remove()
+                    .then(function (data) {
+                        res.send(data);
+                        res.status(200);
+                        res.end();
+                    }).catch(function (e) {
+                    console.log(e);
+                    res.status(500);
+                    res.end();
+                });
             })
             .catch(function (err) {
                 console.log(err);

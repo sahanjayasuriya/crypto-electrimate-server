@@ -8,23 +8,21 @@
         uid:"",
         moduleCode:"",
         moduleName:"",
-        sensorCount:0,
-        enabled: false
+        sensorCount:0
     };
 
     moduleController.addModule = function (req, res) {
-        var ref = database.ref('modules/').push()
+        var ref = database.ref('modules/').push();
         ref.set({
             moduleCode: req.body.moduleCode,
-            moduleName: req.body.moduleName,
-            enabled: true
+            moduleName: req.body.moduleName
         }).then(function (data) {
-            database.ref('users/' + req.body.uid + '/modules/').set(
+            database.ref('users/' + req.body.id + '/modules/').set(
                 [ref.getKey()]
             ).catch(function (err) {
                 console.log(err);
             });
-            res.send(ref.getKey());
+            res.send(data);
             res.status(201);
             res.end();
         }).catch(function (err) {
@@ -36,7 +34,7 @@
     };
 
     moduleController.getModule = function (req, res) {
-        database.ref('users/'+req.query.uid).once('value', function () {
+        database.ref('users/'+req.query.id).once('value', function () {
 
         }).then(function (data) {
 
@@ -49,7 +47,7 @@
 
                 var moduleObject = {
                     id:userData.modules[0],
-                    uid:req.query.uid,
+                    uid:req.query.id,
                     moduleCode:moduleData.moduleCode,
                     moduleName:moduleData.moduleName,
                     enabled: moduleData.enabled,
@@ -72,7 +70,48 @@
     };
 
     moduleController.getModuleList = function (req, res) {
-        //TODO : Should be implemented if needed
+        var list = [];
+        firebaseAdmin.auth().listUsers()
+            .then(function (data) {
+                data.users.forEach(function (user, index) {
+                    database.ref('users/' + user.uid).once('value')
+                        .then(function (userData) {
+                            if(userData.val().modules != undefined){
+
+                                database.ref('modules/'+userData.val().modules[0]).once('value', function () {
+
+                                }).then(function (mData) {
+                                    var moduleData = mData.val();
+
+                                    var userObj = {
+                                        "id": user.uid,
+                                        "displayName": user.displayName,
+                                        "email": user.email,
+                                        "phoneNumber": user.phoneNumber,
+                                        "enabled": moduleData.enabled,
+                                        "moduleCode": moduleData.moduleCode,
+                                        "moduleName": moduleData.moduleName
+                                    };
+                                    list.push(userObj);
+                                }).catch(function (e) {
+                                    console.log(e);
+                                })
+                            }
+                            if (index === data.users.length - 1) {
+                                res.send(list);
+                                res.status(200);
+                                res.end();
+                            }
+                        })
+                        .catch(function (err) {
+                            console.log(err);
+                        })
+                });
+            })
+            .catch(function (err) {
+                res.status(404);
+                res.end();
+            });
     };
 
     moduleController.disableModule = function (req, res) {
