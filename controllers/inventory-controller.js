@@ -18,7 +18,7 @@
                 batches
             ).then(function (data) {
                 for(var i = 0; i < req.body.moduleCount; i++){
-                    database.ref('inventory/modules/').push().set({
+                    database.ref('modules/').push().set({
                         batchNumber: req.body.batchNumber
                     }).then(function (data) {
                         succcess++;
@@ -45,7 +45,7 @@
 
     inventoryController.getInventoryModulesList = function (req, res) {
         const batch = req.query.batch;
-        database.ref('inventory/modules').once('value', function () {
+        database.ref('modules').once('value', function () {
 
         }).then(function (data) {
 
