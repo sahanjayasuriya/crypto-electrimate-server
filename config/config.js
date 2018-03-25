@@ -18,6 +18,5 @@
     var database = firebaseAdmin.database();
 
     system.firebaseAdmin = firebaseAdmin;
-
     system.database = database;
 })(module.exports);
