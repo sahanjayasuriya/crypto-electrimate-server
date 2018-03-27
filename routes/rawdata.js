@@ -4,6 +4,7 @@
 
     routes.init = function (app) {
         app.post(prefix + '', rawDataController.save);
+        app.get(prefix + '', rawDataController.process);
     }
 
 })(module.exports);
