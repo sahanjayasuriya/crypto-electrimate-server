@@ -12,13 +12,11 @@
     };
 
     moduleController.addModule = function (req, res) {
-        var ref = database.ref('modules/').push();
-        ref.set({
-            moduleCode: req.body.moduleCode,
+        database.ref('modules/' + req.body.moduleCode).update({
             moduleName: req.body.moduleName
         }).then(function (data) {
             database.ref('users/' + req.body.id + '/modules/').set(
-                [ref.getKey()]
+                [req.body.moduleCode]
             ).catch(function (err) {
                 console.log(err);
             });
