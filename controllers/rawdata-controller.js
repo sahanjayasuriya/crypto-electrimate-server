@@ -1,6 +1,7 @@
 (function (rawDataController) {
 
     var config = require('../config/config');
+    var billCalculationService = require('../service/bill-calculation-service');
 
     var firebaseAdmin = config.firebaseAdmin;
     var database = config.database;
@@ -8,11 +9,13 @@
     rawDataController.save = function (req, res) {
         try {
             var count = 0;
-            req.body.forEach(function (value) {
+            var moduleTotalWattHours = 0;
+            var moduleSerialNumber = req.body.moduleSerialNumber;
+            req.body.data.forEach(function (value) {
                 var ref = database.ref('sensors/' + value.serialNumber + '/');
+                var sensorTotalWattHours = 0;
                 ref.child('processed').once('value', function (processedSnap) {
                     var processed = processedSnap.val() || {};
-                    console.log(value);
                     var rawValues = {};
                     value.raw.forEach(function (raw) {
                         var newKey = ref.child('raw').push().key;
@@ -33,14 +36,40 @@
                             processed[d.getFullYear()][d.getMonth() + 1][d.getDate()] = {}
                         }
                         var x = (processed[d.getFullYear()][(d.getMonth() + 1)][d.getDate()][d.getHours()] || 0) + wattHour;
-                        console.log(x);
+                        sensorTotalWattHours += wattHour;
+                        moduleTotalWattHours += wattHour;
                         processed[d.getFullYear()][(d.getMonth() + 1)][d.getDate()][d.getHours()] = x;
 
                     });
+                    ref.child('bills').orderByChild('current').equalTo(true).limitToFirst(1)
+                        .once('value')
+                        .then(function (currentBillSnap) {
+                            currentBillSnap.forEach(function (a) {
+                                sensorTotalWattHours += (a.val().wattHours || 0);
+                                a.ref.update({
+                                    amount: billCalculationService.calculate(sensorTotalWattHours),
+                                    wattHours: sensorTotalWattHours
+                                });
+                                return true;
+                            });
+                        });
                     ref.child('raw').update(rawValues)
                         .then(function (snapshot) {
                             count++;
-                            if (count == req.body.length) {
+                            if (count == req.body.data.length) {
+                                console.log(moduleSerialNumber, value.serialNumber);
+                                database.ref('modules/' + moduleSerialNumber + '/bills').orderByChild('current').equalTo(true).limitToFirst(1)
+                                    .once('value')
+                                    .then(function (moduleBillSnap) {
+                                        moduleBillSnap.forEach(function (a) {
+                                            moduleTotalWattHours += (a.val().wattHours || 0);
+                                            a.ref.update({
+                                                amount: billCalculationService.calculate(moduleTotalWattHours),
+                                                wattHours: moduleTotalWattHours
+                                            });
+                                            return true;
+                                        });
+                                    });
                                 res.send(snapshot);
                                 res.status(200);
                                 res.end()
@@ -53,7 +82,7 @@
                                 res.status(500);
                                 res.end();
                             }
-                        })
+                        });
                     ref.child('/processed').update(processed);
                 });
             });
@@ -99,5 +128,6 @@
         res.status(200);
         res.end();
     }
+
 
 })(module.exports);
