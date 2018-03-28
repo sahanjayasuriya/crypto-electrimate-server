@@ -85,4 +85,86 @@
     };
 
 
+    inventoryController.addInventorySensors = function (req, res) {
+        var succcess = 0;
+        var failed = 0;
+        var batches = []
+        database.ref('inventory/sensorbatches').once('value', function (data) {
+
+        }).then(function (data) {
+            if (data.val() != null) {
+                batches = data.val();
+            }
+            batches.push(req.body.batchNumber);
+            database.ref('inventory/sensorbatches').set(
+                batches
+            ).then(function (data) {
+                for (var i = 0; i < req.body.sensorCount; i++) {
+                    database.ref('sensors/').push().set({
+                        batchNumber: req.body.batchNumber
+                    }).then(function (data) {
+                        succcess++;
+                    }).catch(function (err) {
+                        failed++;
+                    });
+
+                    if (i == (req.body.sensorCount - 1)) {
+                        if (failed == req.body.sensorCount) {
+                            res.status(500);
+                            res.end();
+                        } else {
+                            res.status(200);
+                            res.end();
+                        }
+                    }
+                }
+            }).catch(function (err) {
+                res.status(500);
+                res.end();
+            });
+        });
+    };
+
+    inventoryController.getInventorySensorsList = function (req, res) {
+        const batch = req.query.batch;
+        database.ref('sensors').once('value', function () {
+
+        }).then(function (data) {
+
+            var sensors = data.val();
+            var keys = Object.keys(sensors);
+            var resArray = [];
+
+            for (var i = 0; i < keys.length; i++) {
+                var k = keys[i];
+                var batchNumber = sensors[k].batchNumber;
+                if (batchNumber == batch) {
+                    resArray.push({id: k, batchNumber: batchNumber});
+                }
+            }
+            res.send(resArray);
+            res.status(200);
+            res.end();
+        }).catch(function (err) {
+            console.log(err);
+            res.send(err.message);
+            res.status(500);
+            res.end();
+        });
+    };
+
+    inventoryController.getInventorySensorsBatches = function (req, res) {
+        database.ref('inventory/sensorbatches').once('value', function (data) {
+
+        }).then(function (data) {
+            res.send(data.val());
+            res.status(200);
+            res.end();
+        }).catch(function (err) {
+            res.status(500);
+            res.end();
+        });
+    };
+
+
 })(module.exports);
