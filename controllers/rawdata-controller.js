@@ -10,14 +10,18 @@
         try {
             var count = 0;
             var moduleTotalWattHours = 0;
+            var wattHoursOfAllSensors = {
+                sensors: [],
+                totalWattHours: 0
+            };
             var moduleSerialNumber = req.body.moduleSerialNumber;
-            req.body.data.forEach(function (value) {
-                var ref = database.ref('sensors/' + value.serialNumber + '/');
+            req.body.data.forEach(function (sensor) {
+                var ref = database.ref('sensors/' + sensor.serialNumber + '/');
                 var sensorTotalWattHours = 0;
                 ref.child('processed').once('value', function (processedSnap) {
                     var processed = processedSnap.val() || {};
                     var rawValues = {};
-                    value.raw.forEach(function (raw) {
+                    sensor.raw.forEach(function (raw) {
                         var newKey = ref.child('raw').push().key;
                         raw['processed'] = false;
                         rawValues['/' + newKey] = raw;
@@ -44,10 +48,14 @@
                     ref.child('bills').orderByChild('current').equalTo(true).limitToFirst(1)
                         .once('value')
                         .then(function (currentBillSnap) {
-                            currentBillSnap.forEach(function (a) {
-                                sensorTotalWattHours += (a.val().wattHours || 0);
-                                a.ref.update({
-                                    amount: billCalculationService.calculate(sensorTotalWattHours),
+                            currentBillSnap.forEach(function (currentBill) {
+                                sensorTotalWattHours += (currentBill.val().wattHours || 0);
+                                // currentBill.ref.update({
+                                //     amount: billCalculationService.calculate(sensorTotalWattHours),
+                                //     wattHours: sensorTotalWattHours
+                                // });
+                                wattHoursOfAllSensors.sensors.push({
+                                    serialNumber: sensor.serialNumber,
                                     wattHours: sensorTotalWattHours
                                 });
                                 return true;
@@ -56,23 +64,41 @@
                     ref.child('raw').update(rawValues)
                         .then(function (snapshot) {
                             count++;
-                            if (count == req.body.data.length) {
-                                console.log(moduleSerialNumber, value.serialNumber);
+                            if (count === req.body.data.length) {
+                                console.log(moduleSerialNumber, sensor.serialNumber);
                                 database.ref('modules/' + moduleSerialNumber + '/bills').orderByChild('current').equalTo(true).limitToFirst(1)
                                     .once('value')
                                     .then(function (moduleBillSnap) {
                                         moduleBillSnap.forEach(function (a) {
                                             moduleTotalWattHours += (a.val().wattHours || 0);
+                                            wattHoursOfAllSensors.totalWattHours = moduleTotalWattHours;
+                                            var from = new Date(a.val().from);
+                                            var to = a.val().to || new Date();
+                                            var calculation = billCalculationService.calculate(wattHoursOfAllSensors, from, to);
+                                            calculation.sensors.forEach(function (sensor) {
+                                                database.ref('sensors/' + sensor.serialNumber + '/bills').orderByChild('current').equalTo(true).limitToFirst(1)
+                                                    .once('value')
+                                                    .then(function (currentBillSnap) {
+                                                        currentBillSnap.forEach(function (currentBill) {
+                                                            sensorTotalWattHours += (currentBill.val().wattHours || 0);
+                                                            currentBill.ref.update({
+                                                                amount: sensor.total,
+                                                                wattHours: sensor.wattHours
+                                                            });
+                                                            return true;
+                                                        });
+                                                    });
+                                            });
                                             a.ref.update({
-                                                amount: billCalculationService.calculate(moduleTotalWattHours),
+                                                amount: calculation.total,
                                                 wattHours: moduleTotalWattHours
                                             });
                                             return true;
                                         });
+                                        res.send(snapshot);
+                                        res.status(200);
+                                        res.end()
                                     });
-                                res.send(snapshot);
-                                res.status(200);
-                                res.end()
                             }
                         })
                         .catch(function (err) {
