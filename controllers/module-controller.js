@@ -4,17 +4,29 @@
     var database = config.database;
 
     var moduleMeta = {
-        id:"",
-        uid:"",
-        moduleCode:"",
-        moduleName:"",
-        sensorCount:0
+        id: "",
+        uid: "",
+        moduleCode: "",
+        moduleName: "",
+        sensorCount: 0
     };
 
     moduleController.addModule = function (req, res) {
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = (date.getMonth() + 1) < 9 ? '0' + (date.getMonth() + 1) : (date.getMonth() + 1);
+        var day = date.getDate();
+        var hours = date.getHours();
+        var dateString = year + '-' + month + '-' + day + 'T' + hours + ':00:00Z';
         database.ref('modules/' + req.body.moduleCode).update({
             moduleName: req.body.moduleName
         }).then(function (data) {
+            database.ref('modules/' + req.body.moduleCode + '/bills').push({
+                current: true,
+                from: dateString
+            }).catch(function (err) {
+                console.log(err);
+            });
             database.ref('users/' + req.body.id + '/modules/').set(
                 [req.body.moduleCode]
             ).catch(function (err) {
@@ -32,24 +44,24 @@
     };
 
     moduleController.getModule = function (req, res) {
-        database.ref('users/'+req.query.id).once('value', function () {
+        database.ref('users/' + req.query.id).once('value', function () {
 
         }).then(function (data) {
 
             var userData = data.val();
 
-            database.ref('modules/'+userData.modules[0]).once('value', function () {
+            database.ref('modules/' + userData.modules[0]).once('value', function () {
 
             }).then(function (mData) {
                 var moduleData = mData.val();
 
                 var moduleObject = {
-                    id:userData.modules[0],
-                    uid:req.query.id,
-                    moduleCode:moduleData.moduleCode,
-                    moduleName:moduleData.moduleName,
+                    id: userData.modules[0],
+                    uid: req.query.id,
+                    moduleCode: moduleData.moduleCode,
+                    moduleName: moduleData.moduleName,
                     enabled: moduleData.enabled,
-                    sensorCount:moduleData.sensors == null? 0 : moduleData.sensors.length
+                    sensorCount: moduleData.sensors == null ? 0 : moduleData.sensors.length
                 };
 
                 res.status(200);
@@ -74,9 +86,9 @@
                 data.users.forEach(function (user, index) {
                     database.ref('users/' + user.uid).once('value')
                         .then(function (userData) {
-                            if(userData.val().modules != undefined){
+                            if (userData.val().modules != undefined) {
 
-                                database.ref('modules/'+userData.val().modules[0]).once('value', function () {
+                                database.ref('modules/' + userData.val().modules[0]).once('value', function () {
 
                                 }).then(function (mData) {
                                     var moduleData = mData.val();
@@ -113,13 +125,13 @@
     };
 
     moduleController.disableModule = function (req, res) {
-        database.ref('users/'+req.body.id).once('value', function () {
+        database.ref('users/' + req.body.id).once('value', function () {
 
         }).then(function (data) {
 
             var userData = data.val();
 
-            database.ref('modules/'+userData.modules[0]).update({
+            database.ref('modules/' + userData.modules[0]).update({
                 "enabled": false
             }).then(function (data) {
                 res.status(200);
@@ -138,13 +150,13 @@
     };
 
     moduleController.enableModule = function (req, res) {
-        database.ref('users/'+req.body.id).once('value', function () {
+        database.ref('users/' + req.body.id).once('value', function () {
 
         }).then(function (data) {
 
             var userData = data.val();
 
-            database.ref('modules/'+userData.modules[0]).update({
+            database.ref('modules/' + userData.modules[0]).update({
                 "enabled": true
             }).then(function (data) {
                 res.status(200);
@@ -168,13 +180,13 @@
             "moduleName": req.body.moduleName
         }
 
-        database.ref('users/'+req.body.id).once('value', function () {
+        database.ref('users/' + req.body.id).once('value', function () {
 
         }).then(function (data) {
 
             var userData = data.val();
 
-            database.ref('modules/'+userData.modules[0]).update(updateJson).then(function (data) {
+            database.ref('modules/' + userData.modules[0]).update(updateJson).then(function (data) {
                 res.status(200);
                 res.send(data);
                 res.end();
