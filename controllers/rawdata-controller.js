@@ -2,8 +2,6 @@
 
     var config = require('../config/config');
     var billCalculationService = require('../service/bill-calculation-service');
-
-    var firebaseAdmin = config.firebaseAdmin;
     var database = config.database;
 
     rawDataController.save = function (req, res) {
@@ -35,8 +33,8 @@
                     })
                     // Process new Raw Data
                     .then((results) => {
-                        const processedSnap = results[0]
-                        const currentBillSnap = results[1]
+                        const processedSnap = results[0];
+                        const currentBillSnap = results[1];
                         const processed = processedSnap.val() || {}
                         const processedAndSensorTotal = rawDataController.processRawData(processed, sensor.raw) // {totalRawWattHours, processed}
 
