@@ -2,6 +2,13 @@
 
     const NUMBER_OF_DAYS_PER_MONTH = 30;
 
+    /**
+     * Calculate the watt hours for each user
+     * @param moduleWattHours
+     * @param from
+     * @param to
+     * @returns {*}
+     */
     billCalculationService.calculate = function (moduleWattHours, from, to) {
         var dateDiff = this.dateDiff(from, to);
         console.log(dateDiff)
@@ -19,16 +26,34 @@
         return moduleWattHours;
     };
 
+    /**
+     * Find the difference between two dates in days
+     * @param from
+     * @param to
+     * @returns {number}
+     */
     billCalculationService.dateDiff = function (from, to) {
         var timeDiff = Math.abs(from.getTime() - to.getTime());
         return Math.ceil(timeDiff / (1000 * 3600 * 24));
     }
 
 
+    /**
+     * The ratio of each users usage
+     * @param unit
+     * @param days
+     * @returns {number}
+     */
     billCalculationService.ratio = function (unit, days) {
         return Math.ceil(unit * days / NUMBER_OF_DAYS_PER_MONTH);
     }
 
+    /**
+     * Calculate the amount to be paid by the user according to user's usage
+     * @param wattHours
+     * @param days
+     * @returns {number}
+     */
     billCalculationService.calculateAmount = function (wattHours, days) {
         var ranges = [{
             from: 0,
@@ -63,11 +88,6 @@
         };
         var prevUnits = 0;
         for (var range of ranges) {
-            // console.log(range)
-            // console.log(prevUnits);
-            // console.log(prevRange);
-            // console.log(wattHours);
-
             if (wattHours > range.to) {
                 prevUnits = range.to - prevRange.to;
                 total += prevUnits * range.unitPrice;
@@ -82,22 +102,3 @@
     }
 
 })(module.exports);
-
-var service = require('./bill-calculation-service');
-
-var moduleWattHours = {
-    sensors: [{
-        serialNumber: '123',
-        wattHours: 23
-    },
-        {
-            serialNumber: '890',
-            wattHours: 33
-        }
-    ],
-    totalWattHours: 56
-}
-// var from = new Date('03/01/2018');
-// var to = new Date('03/16/2018');
-// var c = service.calculate(moduleWattHours, from, to)
-// console.log(c);
