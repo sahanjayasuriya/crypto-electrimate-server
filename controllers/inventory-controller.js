@@ -1,33 +1,39 @@
 (function (inventoryController) {
     var config = require('../config/config');
-    var firebaseAdmin = config.firebaseAdmin;
     var database = config.database;
 
+    /**
+     * Save new Modules to the Database
+     * This method is not secured with any HTTP security implementation
+     */
     inventoryController.addInventoryModules = function (req, res) {
-        var succcess = 0;
+        var success = 0;
         var failed = 0;
-        var batches =[]
+        var batches = []
         database.ref('inventory/modulebatches').once('value', function (data) {
 
         }).then(function (data) {
-            if(data.val() != null){
+            if (data.val() != null) {
                 batches = data.val();
             }
+            // Add a new batch
             batches.push(req.body.batchNumber);
             database.ref('inventory/modulebatches').set(
                 batches
             ).then(function (data) {
-                for(var i = 0; i < req.body.moduleCount; i++){
+                // save modules
+                for (var i = 0; i < req.body.moduleCount; i++) {
                     database.ref('modules/').push().set({
                         batchNumber: req.body.batchNumber
                     }).then(function (data) {
-                        succcess++;
+                        success++;
                     }).catch(function (err) {
                         failed++;
                     });
 
-                    if(i == (req.body.moduleCount - 1)){
-                        if(failed == req.body.moduleCount){
+                    // check for all modules are saved
+                    if (i == (req.body.moduleCount - 1)) {
+                        if (failed == req.body.moduleCount) {
                             res.status(500);
                             res.end();
                         } else {
@@ -43,6 +49,10 @@
         });
     };
 
+    /**
+     * Returns a JSON object of Modules array from Database
+     * This method is not secured with any HTTP security implementation
+     */
     inventoryController.getInventoryModulesList = function (req, res) {
         const batch = req.query.batch;
         database.ref('modules').once('value', function () {
@@ -53,10 +63,10 @@
             var keys = Object.keys(modules);
             var resArray = [];
 
-            for(var i = 0; i < keys.length; i++){
+            for (var i = 0; i < keys.length; i++) {
                 var k = keys[i];
                 var batchNumber = modules[k].batchNumber;
-                if(batchNumber == batch){
+                if (batchNumber == batch) {
                     resArray.push({id: k, batchNumber: batchNumber});
                 }
             }
@@ -71,6 +81,10 @@
         });
     };
 
+    /**
+     * Returns a JSON object of Module Batches
+     * This method is not secured with any HTTP security implementation
+     */
     inventoryController.getInventoryModulesBatches = function (req, res) {
         database.ref('inventory/modulebatches').once('value', function (data) {
 
@@ -84,7 +98,10 @@
         });
     };
 
-
+    /**
+     * Save new Sensors to the Inventory
+     * This method is not secured with any HTTP security implementation
+     */
     inventoryController.addInventorySensors = function (req, res) {
         var succcess = 0;
         var failed = 0;
@@ -125,6 +142,11 @@
         });
     };
 
+
+    /**
+     * Returns a JSON object of Sensors
+     * This method is not secured with any HTTP security implementation
+     */
     inventoryController.getInventorySensorsList = function (req, res) {
         const batch = req.query.batch;
         database.ref('sensors').once('value', function () {
@@ -153,6 +175,10 @@
         });
     };
 
+    /**
+     * Returns a JSON object of Sensor Batches
+     * This method is not secured with any HTTP security implementation
+     */
     inventoryController.getInventorySensorsBatches = function (req, res) {
         database.ref('inventory/sensorbatches').once('value', function (data) {
 
