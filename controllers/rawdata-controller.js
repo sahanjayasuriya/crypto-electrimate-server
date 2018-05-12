@@ -122,9 +122,11 @@
                             });
                         promises.push(sensorBill);
                     });
+                    promises.push(calculation);
                     return Promise.all(promises)
                 })
-                .then(() => {
+                .then((a) => {
+                    res.send(a[a.length - 1]);
                     res.status(200);
                     res.end()
                 })
