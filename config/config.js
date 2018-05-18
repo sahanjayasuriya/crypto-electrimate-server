@@ -2,18 +2,18 @@
     var admin = require('firebase-admin');
     var firebaseClient = require('firebase');
     var config = {
-        apiKey: "AIzaSyAEhfekDFXXKGR-N_HHgB8lsSbHvqU5TrM",
-        authDomain: "electrimate-dev.firebaseapp.com",
-        databaseURL: "https://electrimate-dev.firebaseio.com",
-        projectId: "electrimate-dev",
-        storageBucket: "electrimate-dev.appspot.com",
-        messagingSenderId: "47687875497"
+        apiKey: "AIzaSyDoC0bAwzEjdHXp-Ha630xrUNYrnCeo9VU",
+        authDomain: "electrimate-demo.firebaseapp.com",
+        databaseURL: "https://electrimate-demo.firebaseio.com",
+        projectId: "electrimate-demo",
+        storageBucket: "electrimate-demo.appspot.com",
+        messagingSenderId: "947150330944"
     };
     firebaseClient.initializeApp(config);
-    var serviceAccount = require('../electrimate-dev-firebase-adminsdk-te802-9026d47ec1');
+    var serviceAccount = require('../electrimate-demo-firebase-adminsdk-15s77-454145a4f5');
     var firebaseAdmin = admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        databaseURL: "https://electrimate-dev.firebaseio.com"
+        databaseURL: "https://electrimate-demo.firebaseio.com"
     });
     var database = firebaseAdmin.database();
 

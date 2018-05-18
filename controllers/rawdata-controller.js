@@ -125,8 +125,47 @@
                     promises.push(calculation);
                     return Promise.all(promises)
                 })
+                .then(a => {
+                    return database.ref('modules/' + moduleSerialNumber + '/sensors').once('value')
+                })
+                .then(sensorsSnap => {
+                    const promises = [];
+                    console.log(sensorsSnap.val());
+                    sensorsSnap.val().forEach(sensor => {
+                        promises.push(database.ref('sensors/' + sensor.sensorId + '/bills')
+                            .orderByChild('current').equalTo(true).limitToFirst(1).once('value'))
+                    })
+                    return Promise.all(promises);
+                })
+                .then(sensorBillsSnap => {
+                    const bill = {
+                        wattHours: 0,
+                        amount: 0
+                    };
+                    sensorBillsSnap.forEach(sensorBillSnap => {
+                        sensorBillSnap.forEach(sensorBill => {
+                            console.log(sensorBill);
+                            const sBill = sensorBill.val();
+                            bill.amount += sBill.amount || 0;
+                            bill.wattHours += sBill.wattHours || 0;
+                        })
+                    })
+                    return bill;
+                })
+                .then(bill => {
+                    const b = database.ref('modules/' + moduleSerialNumber + '/bills')
+                        .orderByChild('current').equalTo(true).limitToFirst(1).once('value');
+                    return Promise.all([bill, b])
+                })
+                .then(b => {
+                    const promises = [b[0]];
+                    b[1].forEach(a => {
+                        promises.push(a.ref.update(b[0]))
+                    })
+                    return Promise.all(promises);
+                })
                 .then((a) => {
-                    res.send(a[a.length - 1]);
+                    res.send(a[0]);
                     res.status(200);
                     res.end()
                 })
